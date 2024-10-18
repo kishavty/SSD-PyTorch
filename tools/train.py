@@ -99,7 +99,7 @@ def train(args):
                 loss_output = ''
                 loss_output += 'SSD Classification Loss : {:.4f}'.format(np.mean(ssd_classification_losses))
                 loss_output += ' | SSD Localization Loss : {:.4f}'.format(np.mean(ssd_localization_losses))
-                print(loss_output, lr_scheduler.get_last_lr())
+                print(loss_output)
             if torch.isnan(loss):
                 print('Loss is becoming nan. Exiting')
                 exit(0)

@@ -91,18 +91,20 @@ class VOCDataset(Dataset):
                 torchvision.transforms.v2.RandomHorizontalFlip(p=0.5),
                 torchvision.transforms.v2.Resize(size=(self.im_size, self.im_size)),
                 torchvision.transforms.v2.SanitizeBoundingBoxes(
-                    labels_getter=lambda transform_input: (transform_input[1]["labels"],
-                                                           transform_input[1]["difficult"]),),
+                    labels_getter=lambda transform_input:
+                    (transform_input[1]["labels"], transform_input[1]["difficult"])),
                 torchvision.transforms.v2.ToPureTensor(),
                 torchvision.transforms.v2.ToDtype(torch.float32, scale=True),
-                torchvision.transforms.v2.Normalize(mean=self.imagenet_mean, std=self.imagenet_std)
+                torchvision.transforms.v2.Normalize(mean=self.imagenet_mean,
+                                                    std=self.imagenet_std)
 
             ]),
             'test': torchvision.transforms.v2.Compose([
                 torchvision.transforms.v2.Resize(size=(self.im_size, self.im_size)),
                 torchvision.transforms.v2.ToPureTensor(),
                 torchvision.transforms.v2.ToDtype(torch.float32, scale=True),
-                torchvision.transforms.v2.Normalize(mean=self.imagenet_mean, std=self.imagenet_std)
+                torchvision.transforms.v2.Normalize(mean=self.imagenet_mean,
+                                                    std=self.imagenet_std)
             ]),
         }
 
@@ -132,19 +134,19 @@ class VOCDataset(Dataset):
 
         # Get annotations for this image
         targets = {}
-        targets['bboxes'] = tv_tensors.BoundingBoxes([detection['bbox'] for detection in im_info['detections']],
-                                                     format='XYXY', canvas_size=im.shape[-2:])
-        targets['labels'] = torch.as_tensor([detection['label'] for detection in im_info['detections']])
-        targets['difficult'] = torch.as_tensor([detection['difficult'] for detection in im_info['detections']])
+        targets['bboxes'] = tv_tensors.BoundingBoxes(
+            [detection['bbox'] for detection in im_info['detections']],
+            format='XYXY', canvas_size=im.shape[-2:])
+        targets['labels'] = torch.as_tensor(
+            [detection['label'] for detection in im_info['detections']])
+        targets['difficult'] = torch.as_tensor(
+            [detection['difficult']for detection in im_info['detections']])
 
         # Transform the image and targets
         transformed_info = self.transforms[self.split](im, targets)
         im_tensor, targets = transformed_info
 
         h, w = im_tensor.shape[-2:]
-        wh_tensor = torch.as_tensor([[float(w),
-                                      float(h),
-                                      float(w),
-                                      float(h)]]).expand_as(targets['bboxes'])
+        wh_tensor = torch.as_tensor([[w, h, w, h]]).expand_as(targets['bboxes'])
         targets['bboxes'] = targets['bboxes'] / wh_tensor
         return im_tensor, targets, im_info['filename']

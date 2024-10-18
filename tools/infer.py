@@ -163,7 +163,7 @@ def compute_map(det_boxes, gt_boxes, iou_threshold=0.5, method='area', difficult
     return mean_ap, all_aps
 
 
-def load_model_and_dataset(args, set_seed=False, device='cpu'):
+def load_model_and_dataset(args):
     # Read the config file #
     with open(args.config_path, 'r') as file:
         try:
@@ -173,15 +173,6 @@ def load_model_and_dataset(args, set_seed=False, device='cpu'):
     print(config)
     ########################
 
-    if set_seed:
-        print('setting seed')
-        seed = config['train_params']['seed']
-        torch.manual_seed(seed)
-        np.random.seed(seed)
-        random.seed(seed)
-        if device == 'cuda':
-            torch.cuda.manual_seed_all(seed)
-
     dataset_config = config['dataset_params']
     model_config = config['model_params']
     train_config = config['train_params']
@@ -190,7 +181,7 @@ def load_model_and_dataset(args, set_seed=False, device='cpu'):
                      im_sets=dataset_config['test_im_sets'])
     test_dataset = DataLoader(voc, batch_size=1, shuffle=False)
 
-    model = SSD(config=config['model_params'],
+    model = SSD(config=model_config,
                 num_classes=dataset_config['num_classes'])
     model.to(device=torch.device(device))
     model.eval()
@@ -209,7 +200,7 @@ def infer(args):
     if not os.path.exists('samples'):
         os.mkdir('samples')
 
-    model, voc, test_dataset, config = load_model_and_dataset(args, device='mps')
+    model, voc, test_dataset, config = load_model_and_dataset(args)
     conf_threshold = config['train_params']['infer_conf_threshold']
     model.low_score_threshold = conf_threshold
 
@@ -217,13 +208,11 @@ def infer(args):
     for i in tqdm(range(num_samples)):
         dataset_idx = random.randint(0, len(voc))
         im_tensor, target, fname = voc[dataset_idx]
-
-        _, ssd_detections = model(im_tensor.unsqueeze(0).to(device))
+        _, ssd_detections = model(im_tensor.unsqueeze(0).to(device), [target])
 
         gt_im = cv2.imread(fname)
         h, w = gt_im.shape[:2]
         gt_im_copy = gt_im.copy()
-
         # Saving images with ground truth boxes
         for idx, box in enumerate(target['bboxes']):
             x1, y1, x2, y2 = box.detach().cpu().numpy()
@@ -286,18 +275,16 @@ def infer(args):
 
 
 def evaluate_map(args):
-    model, voc, test_dataset, config = load_model_and_dataset(args, set_seed=True, device='cpu')
+    model, voc, test_dataset, config = load_model_and_dataset(args)
 
     gts = []
     preds = []
     difficults = []
     for im_tensor, target, fname in tqdm(test_dataset):
-        if random.random() > 1.1:
-            continue
-        im_tensor = im_tensor.float()#.to(device)
-        target_bboxes = target['bboxes'].float()[0]#.to(device)
-        target_labels = target['labels'].long()[0]#.to(device)
-        difficult = target['difficult'].long()[0]#.to(device)
+        im_tensor = im_tensor.float().to(device)
+        target_bboxes = target['bboxes'].float()[0].to(device)
+        target_labels = target['labels'].long()[0].to(device)
+        difficult = target['difficult'].long()[0].to(device)
         _, ssd_detections = model(im_tensor)
 
         boxes = ssd_detections[0]['boxes']
