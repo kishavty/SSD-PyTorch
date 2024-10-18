@@ -12,10 +12,14 @@ The repo provides code to train on voc dataset. Specifically I trained on trainv
 
 ## Result by training SSD on VOC 2007 dataset 
 One should be able to get **71-72% mAP** by training on VOC 2007 trainval images(**68% reported in paper**).
-
 Adding 2012 trainval we should be able to get **>77% mAP**
 
+<img src="https://github.com/user-attachments/assets/e21e3344-a0b7-4c91-b06d-6b83f62df0b0" width="300">
+<img src="https://github.com/user-attachments/assets/0d128c3e-d4ab-4335-a18f-77b7553f9634" width="300">
+<img src="https://github.com/user-attachments/assets/1c588ab8-975e-4ece-bb2e-679d6b9fb18d" width="300">
+</br>
 
+Here's an evaluation result that I got after training 100 epochs.
 ```
 Class Wise Average Precisions
 AP for class aeroplane = 0.7552
