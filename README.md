@@ -11,7 +11,7 @@ The repo provides code to train on voc dataset. Specifically I trained on trainv
 
 
 ## Result by training SSD on VOC 2007 dataset 
-One should be able to get **71-72% mAP** by training on VOC 2007 trainval images(68% reported in paper)
+One should be able to get **71-72% mAP** by training on VOC 2007 trainval images(**68% reported in paper**)
 Adding 2012 trainval we should be able to get **>77% mAP**
 
 
