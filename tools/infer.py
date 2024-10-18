@@ -329,7 +329,7 @@ if __name__ == '__main__':
     parser.add_argument('--config', dest='config_path',
                         default='config/voc.yaml', type=str)
     parser.add_argument('--evaluate', dest='evaluate',
-                        default=True, type=bool)
+                        default=False, type=bool)
     parser.add_argument('--infer_samples', dest='infer_samples',
                         default=True, type=bool)
     args = parser.parse_args()
