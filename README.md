@@ -7,16 +7,18 @@ Most of the code is just parts of pytorch ssd implementation and all I have done
 The repo provides code to train on voc dataset. Specifically I trained on trainval images of VOC 2007 dataset and for testing, I use VOC2007 test set.
 
 ## SSD Explanation and Implementation Video
-
+<a href="https://youtu.be/c_nEue9itwg">
+   <img alt="SSD Explanation and Implementation" src="https://github.com/user-attachments/assets/663754cf-93a7-4b7a-9a0f-ff094f73e90a" width="400">
+</a>
 
 
 ## Result by training SSD on VOC 2007 dataset 
 One should be able to get **71-72% mAP** by training on VOC 2007 trainval images(**68% reported in paper**).
 Adding 2012 trainval we should be able to get **>77% mAP**
 
-<img src="https://github.com/user-attachments/assets/e21e3344-a0b7-4c91-b06d-6b83f62df0b0" width="300">
-<img src="https://github.com/user-attachments/assets/0d128c3e-d4ab-4335-a18f-77b7553f9634" width="300">
-<img src="https://github.com/user-attachments/assets/1c588ab8-975e-4ece-bb2e-679d6b9fb18d" width="300">
+<img src="https://github.com/user-attachments/assets/e21e3344-a0b7-4c91-b06d-6b83f62df0b0" width="250">
+<img src="https://github.com/user-attachments/assets/0d128c3e-d4ab-4335-a18f-77b7553f9634" width="250">
+<img src="https://github.com/user-attachments/assets/1c588ab8-975e-4ece-bb2e-679d6b9fb18d" width="250">
 </br>
 
 Here's an evaluation result that I got after training 100 epochs.
@@ -90,17 +92,18 @@ For setting up the VOC 2007 dataset:
   target{
         'bboxes': Number of Gts x 4 (this is in x1y1x2y2 format normalized from 0-1)
         'labels': Number of Gts,
+        'difficult': Number of Gts,
         }
   file_path
-  ```g
+  ```
 
 
 ## For modifications 
-* In case you have GPU which does not support 64 batch size, you can use a smaller batch size like 16 and then have `acc_steps` in config set as 4.
+* In case you have GPU which does not support large batch size, you can use a smaller batch size like 2 and then have `acc_steps` in config set as 4(to mimic 8 batch size training).
 * For using a different backbone you would have to change the following:
-  * Change the backbone, extra conv layers and creation of feature maps in initialization of SSD model 
-  * Ensure the `out_channels` is correctly set as the channels in all feature maps to be used for prediction
-  * In the forward method call the backbone and extra conv layers and ensure `outputs` is correctly set as list of feature maps
+  * Change the backbone, extra conv layers and creation of feature maps in initialization of SSD model
+  * Ensure the `out_channels` is correctly set as the channels in all feature maps to be used for prediction [here](https://github.com/explainingai-code/SSD-PyTorch/blob/main/model/ssd.py#L316)
+  * In the forward method call the backbone and extra conv layers and ensure `outputs` is correctly set as list of feature maps [here](https://github.com/explainingai-code/SSD-PyTorch/blob/main/model/ssd.py#L472)
 
 # Quickstart
 * Create a new conda environment with python 3.10 then run below commands
