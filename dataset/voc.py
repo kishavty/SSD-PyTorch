@@ -23,12 +23,9 @@ def load_images_and_anns(im_sets, label2idx, ann_fname, split):
 
     for im_set in im_sets:
         im_names = []
-        # Fetch all image names in txt file for this imageset
         for line in open(os.path.join(
                 im_set, 'ImageSets', 'Main', '{}.txt'.format(ann_fname))):
             im_names.append(line.strip())
-
-        # Set annotation and image path
         ann_dir = os.path.join(im_set, 'Annotations')
         im_dir = os.path.join(im_set, 'JPEGImages')
         for im_name in im_names:
@@ -61,7 +58,6 @@ def load_images_and_anns(im_sets, label2idx, ann_fname, split):
                 det['label'] = label
                 det['bbox'] = bbox
                 det['difficult'] = difficult
-                # At test time eval does the job of ignoring difficult
                 detections.append(det)
 
             im_info['detections'] = detections
@@ -71,18 +67,19 @@ def load_images_and_anns(im_sets, label2idx, ann_fname, split):
 
 
 class VOCDataset(Dataset):
-    def __init__(self, split, im_sets, im_size=300):
+    def __init__(self, split, im_sets, im_size=512):
         self.split = split
-
-        # Imagesets for this dataset instance (VOC2007/VOC2007+VOC2012/VOC2007-test)
         self.im_sets = im_sets
-        self.fname = 'trainval' if self.split == 'train' else 'test'
+        if self.split == "train":
+            self.fname = 'trainval'
+        elif self.split == 'valid':
+            self.fname = 'val'
+        else:
+            self.fname = 'test'
         self.im_size = im_size
         self.im_mean = [123.0, 117.0, 104.0]
         self.imagenet_mean = [0.485, 0.456, 0.406]
         self.imagenet_std = [0.229, 0.224, 0.225]
-
-        # Train and test transformations
         self.transforms = {
             'train': torchvision.transforms.v2.Compose([
                 torchvision.transforms.v2.RandomPhotometricDistort(),
@@ -106,15 +103,17 @@ class VOCDataset(Dataset):
                 torchvision.transforms.v2.Normalize(mean=self.imagenet_mean,
                                                     std=self.imagenet_std)
             ]),
+            'valid': torchvision.transforms.v2.Compose([
+                torchvision.transforms.v2.Resize(size=(self.im_size, self.im_size)),
+                torchvision.transforms.v2.ToPureTensor(),
+                torchvision.transforms.v2.ToDtype(torch.float32, scale=True),
+                torchvision.transforms.v2.Normalize(mean=self.imagenet_mean,
+                                                    std=self.imagenet_std)
+            ]),
         }
 
-        classes = [
-            'person', 'bird', 'cat', 'cow', 'dog', 'horse', 'sheep',
-            'aeroplane', 'bicycle', 'boat', 'bus', 'car', 'motorbike', 'train',
-            'bottle', 'chair', 'diningtable', 'pottedplant', 'sofa', 'tvmonitor'
-        ]
+        classes = ['couple']
         classes = sorted(classes)
-        # We need to add background class as well with 0 index
         classes = ['background'] + classes
 
         self.label2idx = {classes[idx]: idx for idx in range(len(classes))}
@@ -131,8 +130,13 @@ class VOCDataset(Dataset):
     def __getitem__(self, index):
         im_info = self.images_info[index]
         im = read_image(im_info['filename'])
-
-        # Get annotations for this image
+        if len(im_info['detections']) == 0:
+            targets = {
+                'bboxes': torch.zeros((0, 4), dtype=torch.float32),
+                'labels': torch.zeros((0,), dtype=torch.int64),
+                'difficult': torch.zeros((0,), dtype=torch.int64)
+            }
+            return im, targets, im_info['filename']
         targets = {}
         targets['bboxes'] = tv_tensors.BoundingBoxes(
             [detection['bbox'] for detection in im_info['detections']],
@@ -140,9 +144,7 @@ class VOCDataset(Dataset):
         targets['labels'] = torch.as_tensor(
             [detection['label'] for detection in im_info['detections']])
         targets['difficult'] = torch.as_tensor(
-            [detection['difficult']for detection in im_info['detections']])
-
-        # Transform the image and targets
+            [detection['difficult'] for detection in im_info['detections']])
         transformed_info = self.transforms[self.split](im, targets)
         im_tensor, targets = transformed_info
 
